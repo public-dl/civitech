@@ -9,10 +9,16 @@
     button.disabled = true;
     status.textContent = "現在、お問い合わせの送信準備中です。";
   }
+  const consent = form.elements.namedItem("consent");
   let sending = false;
+  const updateButton = () => {
+    button.disabled = !key || sending || !consent.checked;
+  };
+  consent.addEventListener("change", updateButton);
+  updateButton();
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (sending || !form.reportValidity()) return;
+    if (sending || !consent.checked || !form.reportValidity()) return;
     if (!key) {
       status.textContent = "現在、お問い合わせの送信準備中です。時間をおいて再度お試しください。";
       return;
@@ -23,17 +29,28 @@
     form.setAttribute("aria-busy", "true");
     status.textContent = "送信中です…";
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
     try {
-      const payload = Object.fromEntries(new FormData(form));
+      const payload = new FormData(form);
       const response = await fetch(form.action, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(payload),
+        headers: { Accept: "application/json" },
+        body: payload,
         signal: controller.signal
       });
-      const result = await response.json();
-      if (!response.ok || result.success !== true) throw new Error("Submission failed");
+      const responseText = await response.text();
+      const contentType = response.headers.get("Content-Type") || "";
+      let accepted = false;
+      if (contentType.includes("application/json")) {
+        accepted = JSON.parse(responseText).success === true;
+      } else if (contentType.includes("text/html")) {
+        // Standard form submissions can return Web3Forms' success page.
+        // An arbitrary HTTP 200 or a challenge page must not count as success.
+        const doc = new DOMParser().parseFromString(responseText, "text/html");
+        accepted = doc.title.trim() === "Form Submitted Successfully" &&
+          doc.querySelector("h1")?.textContent.trim() === "Form submitted successfully!";
+      }
+      if (!response.ok || !accepted) throw new Error("Submission failed");
       status.textContent = "お問い合わせを受け付けました。ありがとうございます。";
       form.reset();
     } catch {
@@ -41,7 +58,7 @@
     } finally {
       clearTimeout(timeout);
       sending = false;
-      button.disabled = false;
+      updateButton();
       form.removeAttribute("aria-busy");
     }
   });

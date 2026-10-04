@@ -1648,3 +1648,10 @@ body.lightbox-open{
   .future-vision-intro h2,
   .future-page-hero h1{font-size:36px}
 }
+
+/* Required contact consent */
+.contact-minimal .contact-consent{display:flex;align-items:flex-start;gap:10px;margin:20px 0;font-size:13px;line-height:1.8;cursor:pointer}
+.contact-minimal .contact-consent input[type="checkbox"]{appearance:auto;width:18px;height:18px;flex:0 0 18px;margin:3px 0 0;padding:0;accent-color:#7757ff;cursor:pointer}
+.contact-minimal .contact-consent span{display:block;flex:1;font-size:13px;line-height:1.8;font-weight:500;letter-spacing:normal;color:#17171e;margin:0}
+.contact-minimal .contact-consent input:focus-visible{outline:2px solid #7757ff;outline-offset:3px}
+.contact-actions button:disabled{opacity:.55;cursor:not-allowed}
